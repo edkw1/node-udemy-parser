@@ -13,7 +13,11 @@ async function httpGetJSON(url) {
 
 async function httpGetHTML(url) {
     return await fetch(url).then(response => {
-        return response.text();
+        if (response.redirected) {
+            throw 'redirected'
+        } else {
+            return response.text();
+        }
     })
 }
 

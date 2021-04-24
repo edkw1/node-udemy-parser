@@ -35,7 +35,14 @@ async function init(firstPage, lastPage) {
             courseToDB.url = courseFullUrl;
             courseToDB.price = coursesPrices.courses[course.id].price.amount
             coursesToDB.description = course.headline;
-            courseToDB = await fillFullDescription(courseToDB);
+            try {
+                courseToDB = await fillFullDescription(courseToDB);
+            }catch (err){
+                if(err === 'redirected'){
+                    console.log(`\nКурс ${course.id} не найден. Пропуск...`);
+                    continue;
+                }
+            }
             coursesToDB.push(courseToDB);
         }
         bar.stop();
@@ -83,4 +90,4 @@ async function getPrices(ids) {
 
 
 // с 1 по 5 страницу парсим
-init(12, 12);
+init(16, 16);
