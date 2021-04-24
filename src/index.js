@@ -6,16 +6,17 @@ const fs = require('fs');
 async function init(firstPage, lastPage) {
     let bar;
 
-    for (let i = firstPage; i <= lastPage; i++) {
-        if (!bar) {
-            bar = new cliProgress.SingleBar({
-                format: `Парсинг стр. ${i} из ${lastPage} | {bar} | {percentage}% || {value}/{total} курсов`,
-            }, cliProgress.Presets.shades_classic);
-        }
+    let totalPages = 10000000;
+    for (let i = firstPage; i <= lastPage && i <= totalPages; i++) {
+        bar = new cliProgress.SingleBar({
+            format: `Парсинг стр. ${i} из ${Math.min(lastPage, totalPages)} | {bar} | {percentage}% || {value}/{total} курсов`,
+        }, cliProgress.Presets.shades_classic);
 
         const coursesUrl = `https://www.udemy.com/api-2.0/discovery-units/all_courses/?p=${i}&page_size=16&subcategory=&instructional_level=&lang=ru&price=&duration=&closed_captions=&subs_filter_type=&category_id=288&source_page=category_page&locale=ru_RU&currency=rub&navigation_locale=en_US&skip_price=true&sos=pc&fl=cat`;
         const json = await httpGetJSON(coursesUrl)
         const unit = json.unit;
+        totalPages = unit.pagination.total_page;
+
         const courses = unit.items;
         let coursesToDB = [];
         const coursesIds = courses.map(c => c.id);
@@ -24,7 +25,7 @@ async function init(firstPage, lastPage) {
 
         bar.start(courses.length, 0);
         for (let [i, course] of courses.entries()) {
-            bar.update(i+1);
+            bar.update(i + 1);
             let courseToDB = {};
             const courseFullUrl = `https://www.udemy.com${course.url}`;
 
@@ -36,11 +37,14 @@ async function init(firstPage, lastPage) {
             courseToDB.price = coursesPrices.courses[course.id].price.amount
             coursesToDB.description = course.headline;
             try {
+                console.log(`\n${courseToDB.url} ${courseToDB.id}`);
                 courseToDB = await fillFullDescription(courseToDB);
-            }catch (err){
-                if(err === 'redirected'){
+            } catch (err) {
+                if (err === 'redirected') {
                     console.log(`\nКурс ${course.id} не найден. Пропуск...`);
                     continue;
+                }else {
+                    throw err;
                 }
             }
             coursesToDB.push(courseToDB);
@@ -90,4 +94,4 @@ async function getPrices(ids) {
 
 
 // с 1 по 5 страницу парсим
-init(16, 16);
+init(21, 25);
