@@ -34,8 +34,8 @@ async function init(firstPage, lastPage) {
             courseToDB.length = course.content_info_short;
             courseToDB.url = courseFullUrl;
             courseToDB.price = coursesPrices.courses[course.id].price.amount
+            coursesToDB.description = course.headline;
             courseToDB = await fillFullDescription(courseToDB);
-
             coursesToDB.push(courseToDB);
         }
         bar.stop();
@@ -53,7 +53,11 @@ async function fillFullDescription(course) {
     course.requirements = requirements.childNodes.map(e => e.text).join('; ');
 
     const description = htmlEl.querySelector('.ud-component--course-landing-page-udlite--description div[data-purpose="safely-set-inner-html:description:description"]');
-    course.description = removeEnglishDescription(description.text);
+    if (description) {
+        course.description = removeEnglishDescription(description.text);
+    } else {
+        console.log(`\nКурс ${course.id} без описания!`)
+    }
 
     const authors = htmlEl.querySelector('.udlite-instructor-links');
     course.authors = authors.childNodes.map(e => e.text).join(', ');
@@ -64,7 +68,11 @@ async function fillFullDescription(course) {
 }
 
 function removeEnglishDescription(description) {
-    return description.split('-----')[0];
+    if (description.includes('-----')) {
+        return description.split('-----')[0];
+    } else {
+        return description;
+    }
 }
 
 
@@ -75,4 +83,4 @@ async function getPrices(ids) {
 
 
 // с 1 по 5 страницу парсим
-init(1, 1);
+init(12, 12);
